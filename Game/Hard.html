@@ -1,0 +1,718 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>CITY WAR</title>
+	<style>
+		body {
+			margin: 0px 300px;
+			padding: 0em 0.625em 0em;
+			background-color: #000000;
+		}
+	</style>
+	<script src="pixi.js"></script>
+</head>
+	<audio src="assets/soundtrack.wav" autoplay="autoplay" loop="loop" id="GameTrack">
+	<audio src="assets/bullet.wav" id="S_bullet">
+	<audio src="assets/life.wav" id="S_life">
+	<audio src="assets/firing.wav" id="S_fire">
+	<audio src="assets/Explosion_Dull.wav" id="S_exp">
+<body>
+	<script>
+	// variables
+	var enemies = [], fire = [], lifes = [], shield = [], life_token = [], bullet_token = [], explosions = [], explosionTime = [], explosionTextures = [];
+	var count = 0, counter = 0, score = 0, m = 0, n = 0, b = 0, lifecount = 4, press = null, x = null, volume = false, shielded = false, doublebullet = false, pp = false, gameover = false, pause = false;
+	var d1,c1,d2,c2,c;
+
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------
+	// loading photos in the game
+	var background = PIXI.Sprite.fromImage("assets/background.png");
+	var background1 = PIXI.Sprite.fromImage("assets/background.png");
+	var texture = PIXI.Texture.fromImage("assets/plane.png");
+	var assetsToLoader = [ "assets/SpriteSheet.json"];
+	var sh_plane = PIXI.Texture.fromImage("assets/sh_plane.png");
+	var life = PIXI.Texture.fromImage("assets/life.png");
+	var VolumeOff = PIXI.Texture.fromImage("assets/VolumeOff.png");
+	var VolumeClick = PIXI.Texture.fromImage("assets/VolumeClick.png");
+	var VolumeOn = PIXI.Texture.fromImage("assets/VolumeOn.png");
+	var playbutton = PIXI.Texture.fromImage("assets/playbutton.png");
+	var pausebutton = PIXI.Texture.fromImage("assets/pausebutton.png");
+	var restart = PIXI.Sprite.fromImage("assets/restart.png");
+	var home = PIXI.Sprite.fromImage("assets/home.png");
+	var replay = PIXI.Texture.fromImage("assets/replay.png");
+    var replay1 = PIXI.Texture.fromImage("assets/replay1.png");
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	// create an new instance of a pixi stage
+	// the second parameter is interactivity...
+	var interactive = true;
+	var stage = new PIXI.Stage(0x000000, interactive);
+	
+	// create a renderer instance.
+	var renderer = PIXI.autoDetectRenderer(window.innerWidth/2, window.innerHeight);
+
+	// add the renderer view element to the DOM
+	document.body.appendChild(renderer.view);
+	if(pause == false){
+	requestAnimFrame( animate );
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	////////////////////////////BACKGROUND/////////////////////////////
+	// add background to stage..
+	stage.addChild(background);
+	stage.addChild(background1);	
+	// specify background dimentions
+	background.position.x = window.innerWidth/4;
+	background.position.y = 0;
+	background1.position.x = window.innerWidth/4;
+	background1.position.y = -window.innerHeight+3;
+	// center the sprites anchor point
+	background.anchor.x = 0.5;
+	background1.anchor.x = 0.5;
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	///////////////////////////////PLANE////////////////////////////////
+	// create a new Sprite using the texture
+	var plane = new PIXI.Sprite(texture);
+	// enable the plane to be interactive.. this will allow it to respond to mouse and touch events
+	plane.setInteractive(true);
+	// center the sprites anchor point
+	plane.anchor.x = 0.5;
+	plane.anchor.y = 0.5;
+	// move the sprite to the center of the screen
+	plane.position.x = 690;
+	plane.position.y = 500;
+	//add plane to stage
+	stage.addChild(plane);
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	///////////////////////////EXPLOSION///////////////////////////////
+	// create a new loader
+	loader = new PIXI.AssetLoader(assetsToLoader);
+	// use callback
+	loader.onComplete = onAssetsLoaded
+	loader.load();
+	function onAssetsLoaded()
+	{
+		// create an array to store the textures
+		for (var i=0; i < 26; i++) 
+		{
+		 	var texture = PIXI.Texture.fromFrame("Explosion_Sequence_A " + (i+1) + ".png");
+		 	explosionTextures.push(texture);
+		}
+	}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	//////////////////////CREATE ARRAY OF ENEMIES//////////////////////
+	// use the mousedown and touchstart
+	plane.mouseover = plane.touchstart = function(data)
+	{
+		// function that create one enemy every time interval
+	    setInterval(function(){
+	    if(pause == false)
+	   	{
+	   		enemies[count] = PIXI.Sprite.fromImage("assets/enem.png");
+	   	    // rondom x position
+	   	    enemies[count].position.x = Math.random()*window.innerWidth/2 -10;
+    	    // initialize y position above the screen
+	   	    enemies[count].position.y = -100;
+	  	    enemies[count].anchor.x = 0.5;
+	   	    enemies[count].anchor.y = 0.5;
+	   	    enemies[count].z = 0;
+			enemies[count].direction_count = 0;
+	   	    stage.addChild(enemies[count]); 
+	   	    count++;}
+	       //time interval between every 2 succesive enemy planes	
+	   },
+	   1000);
+
+	    //------------------------------------------------------------------------------
+	    /////////////////////CREATE SHIELDS//////////////////////////////
+		setInterval(function(){
+			if(pause == false)
+			{
+				shield[n] = PIXI.Sprite.fromImage("assets/shield.png");
+		        // rondom x position
+	    	    shield[n].position.x = Math.random()*window.innerWidth/2 -10;
+	    	    // initialize y position above the screen
+	    	    shield[n].position.y = -100;
+	    	    shield[n].anchor.x = 0.5;
+	    	    shield[n].anchor.y = 0.5;
+	    	    stage.addChild(shield[n]); 
+	    	    n++;
+			}
+			
+	    //time interval between every 2 succesive enemy planes	
+	    },25000);
+
+	    //--------------------------------------------------------------------------------
+	    //////////////////////LIFE TOKENS//////////////////////////////
+	    setInterval(function(){
+	    	if(pause == false)
+	    	{
+	    		life_token[m] = PIXI.Sprite.fromImage("assets/life_token.png");
+	    	    // rondom x position
+	    	    life_token[m].position.x = Math.random()*window.innerWidth/2 -10;
+	    	    // initialize y position above the screen
+	    	    life_token[m].position.y = -100;
+	    	    life_token[m].anchor.x = 0.5;
+	    	    life_token[m].anchor.y = 0.5;
+	    	    stage.addChild(life_token[m]); 
+	    	    m++;
+	    	}
+	    //---------------------------------------------------------------------------------	
+	    //time interval between every 2 succesive enemy planes	
+	    },30000);
+
+	    //////////////////////BULLET TOKENS//////////////////////////////
+		setInterval(function(){
+			if(pause == false)
+			{
+				bullet_token[b] = PIXI.Sprite.fromImage("assets/bullet_token.png");
+	    	    // rondom x position
+	    	    bullet_token[b].position.x = Math.random()*window.innerWidth/2 -10;
+	    	    // initialize y position above the screen
+	    	    bullet_token[b].position.y = -100;
+	    	    bullet_token[b].anchor.x = 0.5;
+	    	    bullet_token[b].anchor.y = 0.5;
+	    	    stage.addChild(bullet_token[b]);
+	    	    b++; 
+			}
+			//time interval between every 2 succesive enemy planes	
+	    },20000);
+	};
+
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	///////////////////////MOVE PLANE WITH MOUSE///////////////////////
+	plane.mousemove = plane.touchmove = function(data)
+	{
+		this.data = data;
+		// need to get parent coords..
+		var newPosition = this.data.getLocalPosition(this.parent);
+		//always update plane position to the new one according to the mouse 
+		this.position.x = newPosition.x;
+		this.position.y = newPosition.y;
+	}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	/////////////////////////FIRE ON PRESSING//////////////////////////
+	plane.mousedown = plane.touchstart = function(data)
+	{	
+		document.getElementById('S_fire').play();
+		//one bullet at a time
+	    if(doublebullet == false){
+	    	// function that create one bullet every time interval
+	    	press = setInterval(function(){
+	    		fire[counter] = PIXI.Sprite.fromImage("assets/fire.png");
+	    	    fire[counter].position.x = plane.position.x-2.5;
+	    	    fire[counter].position.y = plane.position.y-70;
+	    	    fire[counter].anchor.x = 0.5;
+	    	    fire[counter].anchor.y = 0.5;
+	    	    fire[counter].data = data;
+	    	    stage.addChild(fire[counter]); 
+	    	    counter++;
+	    	    //time interval between every 2 succesive bullets
+	        },80);
+	    }
+	    else
+	    {
+	    	//2 bullets at a time
+	    	press = setInterval(function(){
+	    		fire[counter] = PIXI.Sprite.fromImage("assets/fire.png");
+	            fire[counter].position.x = plane.position.x+10;
+	    	    fire[counter].position.y = plane.position.y-70;
+	    	    fire[counter].anchor.x = 0.5;
+	    	    fire[counter].anchor.y = 0.5;
+	    	    fire[counter].data = data;
+	    	    stage.addChild(fire[counter]); 
+	    	    counter++;
+	    	    fire[counter] = PIXI.Sprite.fromImage("assets/fire.png");
+	    	    fire[counter].position.x = plane.position.x-10;
+	    	    fire[counter].position.y = plane.position.y-70;
+	    	    fire[counter].anchor.x = 0.5;
+	    	    fire[counter].anchor.y = 0.5;
+	    	    fire[counter].data = data;
+	    	    stage.addChild(fire[counter]); 
+	    	    counter++;
+	            //time interval between every 2 succesive bullets
+	        },80);
+	    }
+	};
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	//////////////////STOP FIRING WHILE NOT PRESSING//////////////////
+	 plane.mouseup = plane.touchstart = function(data)
+	 {
+	 	document.getElementById('S_fire').pause();
+	   	clearInterval(press);
+	 };
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	/////////////////////////SOUND BUTTON/////////////////////////////
+	
+	var VolumeButton = new PIXI.Sprite(VolumeOn);
+	VolumeButton.anchor.x= 0.5;
+	VolumeButton.anchor.y= 0.5;
+	VolumeButton.position.x= window.innerWidth/2-50;
+	VolumeButton.position.y= 50;
+	VolumeButton.setInteractive(true);
+	//sound on
+	VolumeButton.buttonMode = true;
+	stage.addChild(VolumeButton);
+
+	VolumeButton.mousedown = function(data){
+		this.isdown = true;
+		VolumeButton.setTexture(VolumeClick);
+		renderer.render(stage);
+	}
+
+	VolumeButton.mouseup = VolumeButton.touchstart = function(data)
+	{
+		// sound off 
+	  	if(volume == false){
+	    	VolumeButton.setTexture(VolumeOff);
+	    	volume = true;
+	    	renderer.render(stage);
+	    	document.getElementById('GameTrack').muted = true;
+	    	document.getElementById('S_life').muted = true;
+	    	document.getElementById('S_fire').muted = true;
+	    	document.getElementById('S_bullet').muted = true;
+	    	document.getElementById('S_exp').muted = true;
+	    }
+	    //sound on
+	   	else if(volume == true){
+			VolumeButton.setTexture(VolumeOn);
+	    	volume = false;	
+	    	renderer.render(stage); 
+	    	document.getElementById('GameTrack').muted = false;
+	    	document.getElementById('S_life').muted = false;
+	    	document.getElementById('S_fire').muted = false;
+	    	document.getElementById('S_bullet').muted = false;
+	    	document.getElementById('S_exp').muted = false;
+
+	    }
+	};	
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	/////////////////////////PLAY/PAUSE BUTTON/////////////////////////////
+	
+	var play_pause = new PIXI.Sprite(pausebutton);
+	play_pause.anchor.x= 0.5;
+	play_pause.anchor.y= 0.5;
+	play_pause.position.x= window.innerWidth/2-50;
+	play_pause.position.y= window.innerHeight-75;
+	play_pause.setInteractive(true);
+
+	play_pause.buttonMode = true;
+	stage.addChild(play_pause);
+
+	play_pause.mousedown = function(data){
+		this.isdown = true;
+		if(pp == false){
+
+	    	play_pause.setTexture(playbutton);
+	    	renderer.render(stage);
+	    	renderer.render(stage);
+	    	pp = true;
+	    	pause = true;
+	    	clearInterval(enemies[count]);
+	    	
+
+	    }
+
+	   	else if(pp == true){
+			play_pause.setTexture(pausebutton);
+	    	pp = false;	
+	    	pause = false;  
+	    }
+
+	}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	/////////////////////////RESTART BUTTON/////////////////////////////
+	var RestartButton = new PIXI.Sprite(replay);
+	RestartButton.anchor.x= 0.5;
+	RestartButton.anchor.y= 0.5;
+	RestartButton.position.x= window.innerWidth/2 - 120 ;
+	RestartButton.position.y= window.innerHeight - 75;
+	RestartButton.setInteractive(true);
+	RestartButton.buttonMode = true;
+	stage.addChild(RestartButton);
+
+	RestartButton.mousedown = function(data){
+		this.isdown = true;
+		RestartButton.setTexture(replay1);
+		window.open("http://localhost/CityWar/Game/Hard.html","_self")
+	}
+
+	RestartButton.mouseup = function(data){
+		RestartButton.setTexture(replay);
+	}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	/////////////////////////COUNT THE SCORE///////////////////////////
+	var countingText = new PIXI.Text("Score : 0", "bold italic 60px Arvo", "#0D286E", "#C6D4F8", 7);
+	countingText.position.x = window.innerHeight/5;
+	countingText.position.y = 0;
+	countingText.anchor.x = 0.5;
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	/////////////////////////CREATE LIFES///////////////////////////
+	for (var i=0; i < 4; i++) 
+	{
+	 	lifes[i] = new PIXI.Sprite(life);
+	 	lifes[i].position.x = 50*i;
+	 	lifes[i].position.y = window.innerHeight-100;
+	 	stage.addChild(lifes[i]);
+	};
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	/////////////////////////GO TO START PAGE///////////////////////////
+	restart.mousedown = restart.touchstart = function(data)
+	{
+		//stage.removeChild(restart);
+		window.open("http://localhost/CityWar/Game/Hard.html","_self");
+	}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	/////////////////////////RESTART GAME AFTER LOSING///////////////////////////
+	home.mousedown = home.touchstart = function(data)
+	{
+		//stage.removeChild(home);
+		window.open("http://localhost/CityWar/MainMenu/startgame.html","_self");
+	}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	//////////////////////ANIMATION FUNCTION//////////////////////////
+	function animate() {
+		if(gameover == false)
+		{
+			requestAnimFrame( animate );
+		
+		
+		if(pause == false){
+
+			document.getElementById('GameTrack').play();
+
+	    // moving background down 5 pixels
+		background.position.y+=5;
+		background1.position.y+=5;
+		
+		//make 2 backgrounds succesive
+		if(background1.position.y>=window.innerHeight)
+		{
+			background1.position.y=-window.innerHeight+12;
+		}
+		if(background.position.y>=window.innerHeight)
+		{
+			background.position.y=-window.innerHeight+10;
+		}
+
+		//----------------------------------------------------------------------------
+	    //////////////////////STOP EXPLOSITION//////////////////////////
+	    for(var i = 0; i < explosions.length; i++){
+			explosionTime[i]++;
+			if(explosionTime[i]>20){
+				stage.removeChild(explosions[i]);
+				explosions.splice(i,1);
+				explosionTime.splice(i,1);
+			}
+		}
+
+		//----------------------------------------------------------------------------
+		//////////////////////COLLISION WITH ENEMY//////////////////////////
+	    for(var i = 0 ; i < count ; i++)
+	    {
+	    	if(enemies[i].z == 0)
+			{
+				enemies[i].position.x += 1;
+				enemies[i].direction_count++;
+				if(enemies[i].direction_count == 30)
+				{
+					enemies[i].z++;
+				}
+			}
+			else if(enemies[i].z==1)
+			{
+				enemies[i].position.x -= 1;
+				enemies[i].direction_count--;
+				if(enemies[i].direction_count == 0)
+				{
+					enemies[i].z--;
+				}
+			}
+			
+			enemies[i].position.y +=8;
+
+	    	//shield taken
+	    	if(shielded == true)
+	    	{
+	    		if((enemies[i].position.x+40) >= (plane.position.x - 60) && (enemies[i].position.x-40) <= (plane.position.x+60) && (enemies[i].position.y+65) >= (plane.position.y-85) && (enemies[i].position.y-65) <= (plane.position.y+85))
+	    		{
+
+	    			document.getElementById('S_exp').play();
+	    			//explosion
+	    			var explosion = new PIXI.MovieClip(explosionTextures);
+					explosion.position.x = enemies[i].position.x;
+					explosion.position.y = enemies[i].position.y;
+					explosion.anchor.x = 0.5;
+					explosion.anchor.y = 0.5;
+					explosion.scale.x = explosion.scale.y = 0.75 + Math.random() * 0.5 ;
+					explosion.gotoAndPlay(Math.random() * 27);
+					explosion.animationspeed = 0.2;
+					explosions.push(explosion);
+					explosionTime.push(0);
+					stage.addChild(explosions[explosions.length-1]);
+					//remove  only enemy
+	    			stage.removeChild(enemies[i]);
+	    			enemies.splice(i,1);
+	    			clearInterval(press);
+	    			count--;
+	    			score++;
+	    			// update score...
+			        countingText.setText("Score : "  + score )
+
+	    		}
+	    	}
+	    	else
+	    	{	
+	    		if((enemies[i].position.x+40) >= (plane.position.x - 40) && (enemies[i].position.x-40) <= (plane.position.x+40) && (enemies[i].position.y+65) >= (plane.position.y-65) && (enemies[i].position.y-65) <= (plane.position.y+65))
+	    		{
+	    			if(lifecount != 0)
+	    			{
+	    				//make plane half transparent for 1 sec
+		    		    var f1 = setInterval(function(){
+		    			plane.alpha = 1;
+		    			clearInterval(f1);
+		    		    },1000);	
+		    		    var f2 = setInterval(function(){
+			    		plane.alpha = 0.5;
+			    		clearInterval(f2);
+			    	    },1);	
+
+			    	    document.getElementById('S_exp').play();		
+	    			    //explosion	
+	    			    var explosion = new PIXI.MovieClip(explosionTextures);
+					    explosion.position.x = enemies[i].position.x;
+					    explosion.position.y = enemies[i].position.y;
+					    explosion.anchor.x = 0.5;
+					    explosion.anchor.y = 0.5;
+					    explosion.scale.x = explosion.scale.y = 0.75 + Math.random() * 0.5 ;
+					    explosion.gotoAndPlay(Math.random() * 27);
+					    explosion.animationspeed = 0.2;
+					    explosions.push(explosion);
+					    explosionTime.push(0);
+					    stage.addChild(explosions[explosions.length-1]);	
+					    //remove only enemy
+	    			    stage.removeChild(enemies[i]);
+	    			    enemies.splice(i,1);
+	    			    clearInterval(press);
+	    			    count--;
+	    			    //decrease plane lifes
+	    			    lifecount--;
+	    			    stage.removeChild(lifes[lifecount]);
+	    			}
+	    			else
+	    			{
+	    				
+					    //remove plane & enemy
+					    stage.removeChild(plane);
+	    				stage.removeChild(enemies[i]);
+	    				enemies.splice(i,1);
+	    				clearInterval(press);
+	    				count--;
+	    				//var textSample = new PIXI.Text("GAME OVER!", "bold italic 100px Podkova", "#3F0C16", "#FCF0F3", 10);
+		                //textSample.anchor.x = 0.5;
+		                //textSample.position.x = window.innerWidth/4;
+		                //textSample.position.y = window.innerHeight/4;
+		                //stage.addChild(textSample);
+		                gameover = true;
+		                break;
+
+		                document.getElementById('S_exp').play();
+		                //explosion
+	    				var explosion = new PIXI.MovieClip(explosionTextures);
+					    explosion.position.x = enemies[i].position.x;
+					    explosion.position.y = enemies[i].position.y;
+					    explosion.anchor.x = 0.5;
+					    explosion.anchor.y = 0.5;
+					    explosion.scale.x = explosion.scale.y = 0.75 + Math.random() * 0.5 ;
+					    explosion.gotoAndPlay(Math.random() * 27);
+					    explosion.animationspeed = 0.2;
+					    explosions.push(explosion);
+					    explosionTime.push(0);
+					    stage.addChild(explosions[explosions.length-1]);
+
+	    			}
+	    		}
+	   	    }
+	    }
+
+	    //----------------------------------------------------------------------------
+	    //////////////////////FIRING ENEMY//////////////////////////
+	    for(var i = 0 ; i < counter ; i++)
+	    {
+	    	fire[i].position.y -=10;
+	    	for(var j = 0 ; j < count ; j++)
+	    	{
+	    		if((enemies[j].position.x+40) >= (fire[i].position.x - 4) && (enemies[j].position.x-40) <= (fire[i].position.x+4) && (enemies[j].position.y+65) >= (fire[i].position.y-10) && (enemies[j].position.y-65) <= (fire[i].position.y+10))
+	    		{
+
+	    			document.getElementById('S_exp').play();
+	    			//explosion
+	    			var explosion = new PIXI.MovieClip(explosionTextures);
+					explosion.position.x = enemies[j].position.x;
+					explosion.position.y = enemies[j].position.y;
+					explosion.anchor.x = 0.5;
+					explosion.anchor.y = 0.5;
+					explosion.scale.x = explosion.scale.y = 0.75 + Math.random() * 0.5 ;
+					explosion.gotoAndPlay(Math.random() * 27);
+					explosion.animationspeed = 0.2;
+					explosions.push(explosion);
+					explosionTime.push(0);
+					stage.addChild(explosions[explosions.length-1]);
+					//remove enemy & bullet
+	    			stage.removeChild(fire[i]);
+	    		    stage.removeChild(enemies[j]);
+	    		    enemies.splice(j,1);
+	    		    fire.splice(i,1);
+	    		    counter--;
+	    		    count--;
+	    		    // update score...
+	    		    score++;   
+			        countingText.setText("Score : "  + score )
+	    		    
+	    		}
+	    	}
+	    }
+
+	    //----------------------------------------------------------------------------
+	    //////////////////////TAKING SHIELD//////////////////////////
+	    for(var i = 0 ; i<n ; i++)
+	    {
+	    	shield[i].position.y +=6;
+	    	if((shield[i].position.x+25) >= (plane.position.x - 40) && (shield[i].position.x-25) <= (plane.position.x+40) && (shield[i].position.y+25) >= (plane.position.y-65) && (shield[i].position.y-25) <= (plane.position.y+65))
+	    	{
+	    		document.getElementById('S_life').play();
+	    		stage.removeChild(shield[i]);
+	    	    shield.splice(i,1);
+	    	    n--;
+	    	    plane.setTexture(sh_plane);
+	    	    shielded = true;
+	    	    d1 =  new Date();
+	    	    c1 = d1.getTime();
+	    	}
+	    }
+	    
+	    d2 = new Date();
+	    c2 = d2.getTime();
+	    c = c2 - c1;
+	    if(c >= 10000 && shielded == true)
+	    {
+	    	plane.setTexture(texture);
+	    	shielded = false;
+	    	//setInterval(function(){
+	    	//	shield.alpha = 1;
+	    	//},10000);
+	    	
+	    }
+
+	    //----------------------------------------------------------------------------
+	    //////////////////////TAKING LIFE//////////////////////////
+	    for(var i = 0 ; i<m ; i++)
+	    {
+	    	life_token[i].position.y+=6;
+	    	if((life_token[i].position.x+25) >= (plane.position.x - 40) && (life_token[i].position.x-25) <= (plane.position.x+40) && (life_token[i].position.y+25) >= (plane.position.y-65) && (life_token[i].position.y-25) <= (plane.position.y+65))
+	    	{
+	    		document.getElementById('S_life').play();
+	    		stage.removeChild(life_token[i]);
+	    	    life_token.splice(i,1);
+	    	    m--;
+	    	    //max life is 4 lifes
+	 	        if(lifecount<4)
+	 	        {
+	 	        	stage.addChild(lifes[lifecount]);
+	 	        	lifecount++;
+	 	        }
+	 	    }
+	    }
+
+	    //----------------------------------------------------------------------------
+	    //////////////////////TAKING DOUBLE BULLET//////////////////////////
+	    for(var i = 0 ; i<b ; i++)
+	    {
+	    	bullet_token[i].position.y+=6;
+	    	if((bullet_token[i].position.x+25) >= (plane.position.x - 40) && (bullet_token[i].position.x-25) <= (plane.position.x+40) && (bullet_token[i].position.y+25) >= (plane.position.y-65) && (bullet_token[i].position.y-25) <= (plane.position.y+65))
+	    	{
+	    		document.getElementById('S_bullet').play();
+	    		stage.removeChild(bullet_token[i]);
+	    	    bullet_token.splice(i,1);
+	            b--;
+	    	    doublebullet = true;
+
+	    	    d1 =  new Date();
+	    	    c1 = d1.getTime();
+	        }
+	    }
+	    c = c2 - c1;
+	    if(c >= 10000 && doublebullet == true)
+	    {
+	    	doublebullet = false;
+	    }
+	    
+	    
+	    stage.addChild(countingText);
+	    // render the stage   
+	    renderer.render(stage);
+	}
+	    else
+	    {
+	    	document.getElementById('GameTrack').pause();
+	    }
+
+      } 
+      else
+      {
+      	
+
+      	var textSample = new PIXI.Text("GAME OVER!", "bold italic 100px Podkova", "#3F0C16", "#FCF0F3", 10);
+		textSample.anchor.x = 0.5;
+		textSample.position.x = window.innerWidth/4;
+		textSample.position.y = window.innerHeight/4;
+		stage.addChild(textSample);
+		
+		restart.anchor.x= 0.5;
+	    restart.anchor.y= 0.5;
+	    restart.position.x= window.innerWidth/4;
+	    restart.position.y= window.innerHeight/2;
+	    restart.setInteractive(true);
+	    restart.buttonMode = true;
+        stage.addChild(restart);	
+
+	    home.anchor.x= 0.5;
+	    home.anchor.y= 0.5;
+	    home.position.x= window.innerWidth/4;
+	    home.position.y= restart.position.y + 75;
+	    home.setInteractive(true);
+	    home.buttonMode = true;
+	    stage.addChild(home);
+
+	    requestAnimFrame( animate );
+	    renderer.render(stage);
+
+	    
+
+		
+		
+
+		                
+      } 
+	}
+
+
+
+	</script>
+
+	</body>
+</html>

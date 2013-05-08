@@ -1,0 +1,126 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>CITY WAR</title>
+	<style>
+		body {
+			margin: 0px 300px;
+			padding: 0em 0.625em 0em;
+			background-color: #000000;
+		}
+	</style>	
+	<script src="pixi.js"></script>
+</head>
+<body>
+	<script>
+	var flag = false;
+	// create an new instance of a pixi stage
+	// the second parameter is interactivity...
+	var interactive = true;
+	var stage = new PIXI.Stage(0x000000, interactive);
+	
+	// create a renderer instance.
+	var renderer = PIXI.autoDetectRenderer(window.innerWidth/2 , window.innerHeight);
+	
+	// add the renderer view element to the DOM
+	document.body.appendChild(renderer.view);
+	
+	requestAnimFrame( animate );
+	
+	// create a background..
+	var background = PIXI.Sprite.fromImage("assets/bg_1.jpg");
+	var name = PIXI.Sprite.fromImage("assets/name.png");
+	var start = PIXI.Sprite.fromImage("assets/start.png");
+	var exit = PIXI.Sprite.fromImage("assets/exit.png");
+	var easybutton = PIXI.Texture.fromImage("assets/easy.png");
+	var hardbutton = PIXI.Texture.fromImage("assets/hard.png");
+	
+	// add background to stage..
+	stage.addChild(background);
+
+	
+	name.anchor.x = 0.5;
+    name.position.x = window.innerWidth/4;
+    name.position.y = 20;
+    stage.addChild(name);
+
+	
+	start.anchor.x= 0.5;
+	start.anchor.y= 0.5;
+	start.position.x= window.innerWidth/4;
+	start.position.y= window.innerHeight/2;
+	start.setInteractive(true);
+	start.buttonMode = true;
+	stage.addChild(start);	
+
+	
+	exit.anchor.x= 0.5;
+	exit.anchor.y= 0.5;
+	exit.position.x= window.innerWidth/4;
+	exit.position.y= start.position.y + 75;
+	exit.setInteractive(true);
+	exit.buttonMode = true;
+	stage.addChild(exit);	
+
+	exit.mousedown = exit.touchstart = function(data)
+	{		
+	 	window.close();
+	}
+
+	var easy = new PIXI.Sprite(easybutton);
+	easy.position.x = start.position.x;
+    easy.position.y = start.position.y + 50;
+    easy.anchor.x = 0.5;   
+    easy.setInteractive(true);
+    easy.buttonMode = true;
+
+    var hard = new PIXI.Sprite(hardbutton);
+    hard.position.x = start.position.x;
+    hard.position.y = start.position.y + 100;
+    hard.anchor.x = 0.5;
+    hard.setInteractive(true);
+    hard.buttonMode = true;
+
+	start.mousedown = start.touchstart = function(data)
+	{
+		if(flag == false)
+			{
+				exit.position.y = exit.position.y + 100;
+				stage.addChild(easy);
+				stage.addChild(hard);
+				flag = true;
+			}
+			else
+			{
+				exit.position.y = exit.position.y - 100;
+				stage.removeChild(easy);
+				stage.removeChild(hard);
+				flag = false;
+			}			
+    }
+
+
+
+	easy.mousedown = easy.touchstart = function(data)
+	{
+		window.open("http://localhost/CityWar/Game/Easy.html","_self");
+	}
+
+	hard.mousedown = hard.touchstart = function(data)
+	{
+		window.open("http://localhost/CityWar/Game/Hard.html","_self");
+	}
+
+
+	
+	function animate() {
+	
+	    requestAnimFrame( animate );
+	    // render the stage  
+	    renderer.render(stage);
+	}
+
+	
+	</script>
+</body>
+</html>
